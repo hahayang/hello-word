@@ -1,0 +1,37 @@
+# coding : utf-8
+# classify函数的参数：
+# inX：用于分类的输入向量
+# dataSet：训练样本集合
+# labels：标签向量
+# k：K-近邻算法中的k
+# shape：是array的属性，描述一个多维数组的维度
+# tile（inX, (dataSetSize,1)）：把inX二维数组化，dataSetSize表示生成数组后的行数，1表示列的倍数。整个这一行代码表示前一个二维数组矩阵的每一个元素减去后一个数组对应的元素值，这样就实现了矩阵之间的减法，简单方便得不让你佩服不行！
+# axis=1：参数等于1的时候，表示矩阵中行之间的数的求和，等于0的时候表示列之间数的求和。
+# argsort()：对一个数组进行非降序排序
+# classCount.get(numOflabel,0) + 1：这一行代码不得不说的确很精美啊。get()：该方法是访问字典项的方法，即访问下标键为numOflabel的项，如果没有这一项，那么初始值为0。然后把这一项的值加1。所以Python中实现这样的操作就只需要一行代码，实在是很简洁高效。
+from numpy import *
+import operator
+
+def createDataSet():
+    group = array([[1.0,1.1],[1.0,1.0],[0,0],[0,0.1],[1,0.1]])
+    labels = ['A','A','B','B','A']
+    return group, labels
+
+def classify(inX, dataSet, labels, k):
+    dataSetSize = dataSet.shape[0]
+    diffMat = tile(inX, (dataSetSize,1)) - dataSet
+    sqDiffMat = diffMat**2
+    sqDistances = sqDiffMat.sum(axis=1)
+    distances = sqDistances**0.5
+    sortedDistances = distances.argsort()
+    classCount = {}
+    for i in range(k):
+        numOflabel = labels[sortedDistances[i]]
+        classCount[numOflabel] = classCount.get(numOflabel,0) + 1
+    sortedClassCount = sorted(classCount.items(), key=operator.itemgetter(1),reverse=True)
+    return sortedClassCount[0][0]
+
+if __name__=="__main__":
+    group, labels = createDataSet()
+    my = classify([1, 0], group, labels, 3)
+    print(my)
