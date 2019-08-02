@@ -1,0 +1,163 @@
+PageRank算法原理与实现
+1、PageRank
+
+
+1.1.简介
+
+
+
+PageRank，又称网页排名、谷歌左侧排名，是一种由搜索引擎根据网页之间相互的超链接计算的技术，而作为网页排名的要素之一，以Google公司创办人拉里·佩奇（Larry Page）之姓来命名。Google用它来体现网页的相关性和重要性，在搜索引擎优化操作中是经常被用来评估网页优化的成效因素之一。
+
+
+
+假设一个由4个网页组成的群体：A，B，C和D。如果所有页面都只链接至A，那么A的PR（PageRank）值将是B，C及D的Pagerank总和。
+
+
+
+640?wx_fmt=png
+
+
+
+重新假设B链接到A和C，C只链接到A，并且D链接到全部其他的3个页面。一个页面总共只有一票。所以B给A和C每个页面半票。以同样的逻辑，D投出的票只有三分之一算到了A的PageRank上。
+
+
+
+640?wx_fmt=png
+
+
+
+1.2.公式
+
+
+
+对于一个页面A，那么它的PR值为：
+
+
+
+640?wx_fmt=png
+
+
+
+PR(A) 是页面A的PR值
+
+PR(Ti)是页面Ti的PR值，在这里，页面Ti是指向A的所有页面中的某个页面
+
+C(Ti)是页面Ti的出度，也就是Ti指向其他页面的边的个数
+
+d 为阻尼系数，其意义是，在任意时刻，用户到达某页面后并继续向后浏览的概率，
+
+
+
+该数值是根据上网者使用浏览器书签的平均频率估算而得，通常d=0.85
+
+
+
+还有一个版本的公式：
+
+
+
+640?wx_fmt=png
+
+
+
+N为页面的总数
+
+
+
+1.3.具体实例
+
+
+640?wx_fmt=png
+
+三个页面A、B、C
+
+
+
+为了便于计算，我们假设每个页面的PR初始值为1，d为0.5。
+
+
+
+页面A的PR值计算如下：
+
+640?wx_fmt=png
+
+页面B的PR值计算如下：
+
+640?wx_fmt=png
+
+页面C的PR值计算如下：
+
+640?wx_fmt=png
+
+
+
+下面是迭代计算12轮之后，各个页面的PR值：
+
+
+
+
+
+640?wx_fmt=png
+
+
+
+那么什么时候，迭代结束哪？一般要设置收敛条件：比如上次迭代结果与本次迭代结果小于某个误差，我们结束程序运行；比如还可以设置最大循环次数。
+
+
+
+2、代码实现
+
+ 1import numpy as np
+ 2from scipy.sparse import csc_matrix
+ 3
+ 4def pageRank(G, s=.85, maxerr=.0001):
+ 5"""
+ 6Computes the pagerank for each of the n states
+ 7Parameters
+ 8----------
+ 9G: matrix representing state transitions
+10Gij is a binary value representing a transition from state i to j.
+11s: probability of following a transition. 1-s probability of teleporting
+12to another state.
+13maxerr: if the sum of pageranks between iterations is bellow this we will
+14    have converged.
+15"""
+16n = G.shape[0]
+17# 将 G into 马尔科夫 A
+18A = csc_matrix(G, dtype=np.float)
+19rsums = np.array(A.sum(1))[:, 0]
+20ri, ci = A.nonzero()
+21A.data /= rsums[ri]
+22sink = rsums == 0
+23# 计算PR值，直到满足收敛条件
+24ro, r = np.zeros(n), np.ones(n)
+25while np.sum(np.abs(r - ro)) > maxerr:
+26ro = r.copy()
+27for i in range(0, n):
+28    Ai = np.array(A[:, i].todense())[:, 0]
+29    Di = sink / float(n)
+30    Ei = np.ones(n) / float(n)
+31    r[i] = ro.dot(Ai * s + Di * s + Ei * (1 - s))
+32 # 归一化
+33 return r / float(sum(r))
+34 if __name__ == '__main__':
+35 # 上面的例子
+36 G = np.array([[0, 0, 1],
+37          [1, 0, 0],
+38          [1, 1, 0]])
+39 print(pageRank(G, s=0.85))
+40 # 结果：
+41 [0.51203622 0.19313191 0.29483187]
+3、参考资料
+
+1、Pagerank Algorithm Explained（https://www.slideshare.net/jdhaar/pagerank-algorithm-explaned）
+
+
+2、【大创_社区划分】——PageRank算法的解析与Python实现（https://blog.csdn.net/gamer_gyt/article/details/47443877）
+
+
+3、浅入浅出：PageRank算法（https://www.letiantian.me/2014-06-10-pagerank/）
+
+
+
+4、PageRank（https://en.wikipedia.org/wiki/PageRank
